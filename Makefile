@@ -6,7 +6,7 @@
 #    By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2018/04/10 17:19:11 by agrumbac          #+#    #+#              #
-#    Updated: 2018/11/25 18:42:54 by agrumbac         ###   ########.fr        #
+#    Updated: 2019/01/26 18:13:21 by Anselme          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,7 +14,8 @@
 
 NAME = ft_traceroute
 
-SRC = ft_traceroute.c
+SRC = ft_traceroute.c errors.c gen_icmp_msg.c in_cksum.c \
+	print_packet.c socket_io.c
 
 CC = clang
 
@@ -44,10 +45,8 @@ G = "\033[32m"
 B = "\033[34m"
 M = "\033[35m"
 C = "\033[36m"
-WT = "\033[37;1m"
-W = "\033[0m""\033[32;1m"
 WR = "\033[0m""\033[31;5m"
-WY = "\033[0m""\033[33;5m"
+WG = "\033[0m""\033[32;5m"
 X = "\033[0m"
 UP = "\033[A"
 CUT = "\033[K"
@@ -78,8 +77,8 @@ fclean: clean
 	@/bin/rm -f ${NAME}
 	@/bin/rm -Rf ${NAME}.dSYM
 
-test: 
-	@${CC} -g ${LDFLAGS} -fsanitize=address,undefined ${LIB} \
+test:
+	@${CC} ${LDFLAGS} -g -fsanitize=address,undefined ${LIB} \
 	-I. -o ${NAME} $(addprefix srcs/, ${SRC})
 
 re: fclean all
@@ -87,8 +86,12 @@ re: fclean all
 ############################## DECORATION ######################################
 
 art:
-	@echo ${WY}
-	@echo "__INSERT_ASCII_ART__"
+	@echo ${BB}
+	@echo "                           "${WG}".    ."${X}${BB}
+	@echo "    \`  ft_traceroute        )  (  "
+	@echo "      _ _ _ _ _ _ _ _ _ _ _(.--.)  "
+	@echo "  \` ((_(_(_(_(_(_(_(_(_(_(_( "${WR}"'"${X}${BB}"_"${WR}"'"${X}${BB}")  "
+	@echo "      \"\" \"\" \"\" \"\" \"\" \"\" \"\" \"' \`\` "
 	@echo ${X}
 
 .PHONY: all clean fclean re art
