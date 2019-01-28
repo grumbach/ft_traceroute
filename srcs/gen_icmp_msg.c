@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/27 19:20:21 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/25 04:41:38 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/28 08:45:00 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 
 #ifdef __linux__
 
-static void	fill_icmp_header(struct icmphdr *ping, int id, int seq)
+static void	fill_icmp_header(struct icmphdr *ping, uint16_t id, uint16_t seq)
 {
 	ping->type = ICMP_ECHO;
 	ping->code = 0;
@@ -26,7 +26,7 @@ static void	fill_icmp_header(struct icmphdr *ping, int id, int seq)
 
 #elif __APPLE__
 
-static void	fill_icmp_header(struct icmp *ping, int id, int seq)
+static void	fill_icmp_header(struct icmp *ping, uint16_t id, uint16_t seq)
 {
 	ping->icmp_type = ICMP_ECHO;
 	ping->icmp_code = 0;
@@ -44,14 +44,14 @@ static void	fill_timestamp(void *buffer)
 		warn("failed getting time of day");
 }
 
-static void	fill_random_data(void *buffer, size_t size)
+static void	fill_payload_ttl(void *buffer, uint8_t ttl, size_t size)
 {
-	memset(buffer, 42, size);
+	memset(buffer, ttl, size);
 }
 
-void		gen_icmp_msg(void *packet, int seq)
+void		gen_icmp_msg(void *packet, uint16_t seq, uint8_t ttl)
 {
-	fill_random_data(packet + ICMP_HDR_SIZE, ICMP_PAYLOAD_SIZE);
+	fill_payload_ttl(packet + ICMP_HDR_SIZE, ttl, ICMP_PAYLOAD_SIZE);
 	fill_timestamp(packet + ICMP_HDR_SIZE + ALIGN_TIMESTAMP);
 	fill_icmp_header(packet, 42, seq);
 }

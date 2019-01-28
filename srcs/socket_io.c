@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/01/18 19:52:51 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/26 17:48:01 by Anselme          ###   ########.fr       */
+/*   Updated: 2019/01/28 02:36:35 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,14 +16,13 @@ int		init_socket(void)
 {
 	int					icmp_sock;
 
-	icmp_sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_ICMP);
+	icmp_sock = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
 	if (icmp_sock < 0)
-	{
-		warn("failed opening DGRAM ICMP socket, trying raw...");
-		icmp_sock = socket(PF_INET, SOCK_RAW, IPPROTO_ICMP);
-		if (icmp_sock < 0)
-			fatal("failed opening ICMP socket");
-	}
+		fatal("failed opening ICMP socket");
+
+	if (setsockopt(icmp_sock, IPPROTO_IP, IP_HDRINCL, \
+		(int[1]){1}, sizeof(int)) == -1)
+		fatal("failed to set socket option");
 
 	return (icmp_sock);
 }
@@ -40,7 +39,7 @@ void	send_echo_request(int icmp_sock, const struct sockaddr *dest, \
 	if (verbose_mode)
 	{
 		printf("sending request:\n");
-		print_icmp_packet(packet);
+		print_ip_icmp_packet(packet);
 	}
 }
 
@@ -57,6 +56,6 @@ void	receive_echo_reply(int icmp_sock, struct sockaddr *source, \
 	if (verbose_mode)
 	{
 		printf("recieved answer:\n");
-		print_icmp_packet(packet);
+		print_ip_icmp_packet(packet);
 	}
 }
