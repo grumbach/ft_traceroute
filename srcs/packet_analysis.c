@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/01/28 02:39:28 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/31 07:27:53 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/31 08:01:36 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,6 +59,20 @@ static const char	*get_source(void *packet)
 	return (net_ntoa(ip->saddr));
 }
 
+static uint8_t		get_payload_ttl(void *packet, uint8_t type)
+{
+	struct icmphdr	*icmp;
+
+	if (type == ICMP_TIME_EXCEEDED || type == ICMP_PARAMETERPROB
+	||  type == ICMP_SOURCE_QUENCH || type == ICMP_REDIRECT
+	||  type == ICMP_TIME_EXCEEDED || type == ICMP_DEST_UNREACH)
+		icmp = packet + 2 * IP_HDR_SIZE + ICMP_HDR_SIZE;
+	else
+		icmp = packet + IP_HDR_SIZE;
+
+	return (ntohs(icmp->un.echo.id));
+}
+
 /*
 **------- APPLE ----------------------------------------------------------------
 */
@@ -79,25 +93,25 @@ static const char	*get_source(void *packet)
 	return (net_ntoa(ip->ip_src.s_addr));
 }
 
+static uint8_t		get_payload_ttl(void *packet, uint8_t type)
+{
+	struct icmp		*icmp;
+
+	if (type == ICMP_TIME_EXCEEDED || type == ICMP_PARAMETERPROB
+	||  type == ICMP_SOURCE_QUENCH || type == ICMP_REDIRECT
+	||  type == ICMP_TIME_EXCEEDED || type == ICMP_DEST_UNREACH)
+		icmp = packet + 2 * IP_HDR_SIZE + ICMP_HDR_SIZE;
+	else
+		icmp = packet + IP_HDR_SIZE;
+
+	return (ntohs(icmp->icmp_id));
+}
+
 #endif
 
 /*
 **------------------------------------------------------------------------------
 */
-
-static uint8_t		get_payload_ttl(void *packet, uint8_t type)
-{
-	uint8_t			*payload_ttl;
-
-	if (type == ICMP_TIME_EXCEEDED || type == ICMP_PARAMETERPROB
-	||  type == ICMP_SOURCE_QUENCH || type == ICMP_REDIRECT
-	||  type == ICMP_TIME_EXCEEDED || type == ICMP_DEST_UNREACH)
-		payload_ttl = packet + 2 * IP_HDR_SIZE + 2 * ICMP_HDR_SIZE;
-	else
-		payload_ttl = packet + IP_HDR_SIZE + ICMP_HDR_SIZE;
-
-	return (*payload_ttl);
-}
 
 static suseconds_t	get_payload_rtt(void *packet, uint8_t type)
 {

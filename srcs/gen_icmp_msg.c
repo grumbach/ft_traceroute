@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/27 19:20:21 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/28 08:45:00 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/31 07:56:35 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,5 +53,5 @@ void		gen_icmp_msg(void *packet, uint16_t seq, uint8_t ttl)
 {
 	fill_payload_ttl(packet + ICMP_HDR_SIZE, ttl, ICMP_PAYLOAD_SIZE);
 	fill_timestamp(packet + ICMP_HDR_SIZE + ALIGN_TIMESTAMP);
-	fill_icmp_header(packet, 42, seq);
+	fill_icmp_header(packet, ttl, seq);
 }
