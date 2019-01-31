@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/04 18:04:47 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/31 05:43:38 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/31 07:22:19 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@ static void		recv_loop(int sock, struct sockaddr_in source, \
 		if (FD_ISSET(sock, &set))
 		{
 			receive_echo_reply(sock, (struct sockaddr *)&source, packet, false);
-			analyse_packet(packet, buf);
+			analyse_packet(packet, true, buf);
 		}
 	}
 }

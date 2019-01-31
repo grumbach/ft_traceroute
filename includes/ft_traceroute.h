@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/04 18:05:58 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/31 06:47:37 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/31 07:21:55 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,12 +79,14 @@ void			gen_icmp_msg(void *packet, uint16_t seq, uint8_t ttl);
 void			gen_ip_header(void *packet, uint8_t ttl, uint32_t dest);
 uint16_t		in_cksum(const void *buffer, size_t size);
 
-void			analyse_packet(void *packet, char buf[FT_TRACEROUTE_MAX_TTL][BUFFSIZE]);
+void			analyse_packet(void *packet, bool verbose_mode, \
+					char buf[FT_TRACEROUTE_MAX_TTL][BUFFSIZE]);
 
 /*
 ** Verbose mode and error announcing
 */
 
+void			dump_reply(void *packet, uint8_t type);
 void			print_ip_icmp_packet(void *packet);
 
 void			fatal(const char * const message);

@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/01/28 02:39:28 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/31 06:47:20 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/31 07:27:53 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -119,45 +119,13 @@ static suseconds_t	get_payload_rtt(void *packet, uint8_t type)
 	return (curr_time - send_time->tv_sec * 1000000 - send_time->tv_usec);
 }
 
-///////////////////////////////////// TODO tmp /////////////////////////////////
-__unused
-static void			hexdump(void *addr, int len)
-{
-	int				i;
-	unsigned char	buff[17];
-	unsigned char	*pc = (unsigned char*)addr;
-
-	for (i = 0; i < len; i++)
-	{
-		if ((i % 16) == 0)
-		{
-			if (i != 0)
-			printf ("  %s\n", buff);
-			printf ("  %04x ", i);
-		}
-		printf (" %02x", pc[i]);
-		if ((pc[i] < 0x20) || (pc[i] > 0x7e))
-			buff[i % 16] = '.';
-		else
-			buff[i % 16] = pc[i];
-			buff[(i % 16) + 1] = '\0';
-	}
-	while ((i % 16) != 0)
-	{
-		printf ("   ");
-		i++;
-	}
-	printf ("  %s\n\n", buff);
-}
-///////////////////////////////////// TODO tmp /////////////////////////////////
-
 /*
 ** analyse_packet
 **  - prints arriving packets info
 **  - stores in buf if out of order
 */
 
-void				analyse_packet(void *packet, \
+void				analyse_packet(void *packet, bool verbose_mode, \
 						char buf[FT_TRACEROUTE_MAX_TTL][BUFFSIZE])
 {
 	static uint8_t	last_ack_ttl = 1;
@@ -170,7 +138,8 @@ void				analyse_packet(void *packet, \
 	ttl = get_payload_ttl(packet, type);
 	rtt = get_payload_rtt(packet, type);
 
-	// hexdump(packet, 88);//TODO tmp
+	if (verbose_mode)
+		dump_reply(packet, type);
 
 	// remember first echo reply's ttl
 	if (type == ICMP_ECHOREPLY && ttl < first_echo_reply_ttl)
