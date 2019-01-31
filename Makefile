@@ -6,7 +6,7 @@
 #    By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2018/04/10 17:19:11 by agrumbac          #+#    #+#              #
-#    Updated: 2019/01/28 09:19:52 by agrumbac         ###   ########.fr        #
+#    Updated: 2019/01/31 11:11:00 by agrumbac         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,7 +14,7 @@
 
 NAME = ft_traceroute
 
-SRC = ft_traceroute.c errors.c gen_icmp_msg.c gen_ip_header.c in_cksum.c \
+SRC = ft_traceroute.c errors.c gen_icmp_msg.c gen_ip_header.c utilities.c \
 	print_packet.c socket_io.c packet_analysis.c
 
 CC = clang
@@ -27,7 +27,7 @@ OBJ = $(addprefix ${OBJDIR}/, $(SRC:.c=.o))
 
 DEP = $(addprefix ${OBJDIR}/, $(SRC:.c=.d))
 
-CFLAGS = -Wall -Wextra -Werror -fsanitize=address,undefined -g -MMD
+CFLAGS = -Wall -Wextra -Werror -MMD
 
 LDFLAGS = -Iincludes/
 
