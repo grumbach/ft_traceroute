@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/04 18:05:58 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/31 08:42:35 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/31 09:14:19 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@
 # include <sys/types.h>
 # include <netinet/ip.h>
 # include <netinet/ip_icmp.h>
+# include <netdb.h>
 
 /*
 ** Redefinition of mainstream MACROS
@@ -79,10 +80,16 @@ void			gen_icmp_msg(void *packet, uint16_t seq, uint8_t ttl);
 void			gen_ip_header(void *packet, uint8_t ttl, uint32_t dest);
 uint16_t		in_cksum(const void *buffer, size_t size);
 
-suseconds_t		get_time(void);
 void			analyse_packet(void *packet, bool verbose_mode, \
 					suseconds_t timestamps[TRC_MAX_TTL][TRC_QUERIES], \
 					char buf[TRC_MAX_TTL][BUFFSIZE]);
+
+/*
+** Utilities
+*/
+
+suseconds_t		get_time(void);
+char			*net_ntoa(uint32_t in);
 
 /*
 ** Verbose mode and error announcing

@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/01/28 02:39:28 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/31 08:48:23 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/31 09:10:46 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 ** Utilities
 */
 
-static char			*net_ntoa(uint32_t in)
+char				*net_ntoa(uint32_t in)
 {
 	static char		buffer[18];
 	unsigned char	*bytes = (unsigned char *) &in;
@@ -40,8 +40,28 @@ suseconds_t			get_time(void)
 }
 
 /*
-**------- LINUX ----------------------------------------------------------------
+** ---------------- LOADS OF getters for Apple and Linux -----------------------
 */
+
+static void			*get_original_icmphdr(void *packet, uint8_t type)
+{
+	if (type == ICMP_TIME_EXCEEDED || type == ICMP_PARAMETERPROB
+	||  type == ICMP_SOURCE_QUENCH || type == ICMP_REDIRECT
+	||  type == ICMP_TIME_EXCEEDED || type == ICMP_DEST_UNREACH)
+		return (packet + 2 * IP_HDR_SIZE + ICMP_HDR_SIZE);
+	else
+		return (packet + IP_HDR_SIZE);
+}
+
+static suseconds_t	get_rtt(suseconds_t timestamps[TRC_MAX_TTL][TRC_QUERIES], \
+						uint8_t ttl, uint16_t seq)
+{
+	suseconds_t		curr_time = get_time();
+
+	if (ttl < TRC_MAX_TTL && seq < TRC_QUERIES)
+		return (curr_time - timestamps[ttl][seq]);
+	return (0);
+}
 
 #ifdef __linux__
 
@@ -61,35 +81,17 @@ static const char	*get_source(void *packet)
 
 static uint16_t		get_original_seq(void *packet, uint8_t type)
 {
-	struct icmphdr	*icmp;
-
-	if (type == ICMP_TIME_EXCEEDED || type == ICMP_PARAMETERPROB
-	||  type == ICMP_SOURCE_QUENCH || type == ICMP_REDIRECT
-	||  type == ICMP_TIME_EXCEEDED || type == ICMP_DEST_UNREACH)
-		icmp = packet + 2 * IP_HDR_SIZE + ICMP_HDR_SIZE;
-	else
-		icmp = packet + IP_HDR_SIZE;
+	struct icmphdr	*icmp = get_original_icmphdr(packet, type);
 
 	return (ntohs(icmp->un.echo.sequence));
 }
 
 static uint8_t		get_original_ttl(void *packet, uint8_t type)
 {
-	struct icmphdr	*icmp;
-
-	if (type == ICMP_TIME_EXCEEDED || type == ICMP_PARAMETERPROB
-	||  type == ICMP_SOURCE_QUENCH || type == ICMP_REDIRECT
-	||  type == ICMP_TIME_EXCEEDED || type == ICMP_DEST_UNREACH)
-		icmp = packet + 2 * IP_HDR_SIZE + ICMP_HDR_SIZE;
-	else
-		icmp = packet + IP_HDR_SIZE;
+	struct icmphdr	*icmp = get_original_icmphdr(packet, type);
 
 	return (ntohs(icmp->un.echo.id));
 }
-
-/*
-**------- APPLE ----------------------------------------------------------------
-*/
 
 #elif __APPLE__
 
@@ -109,28 +111,14 @@ static const char	*get_source(void *packet)
 
 static uint16_t		get_original_seq(void *packet, uint8_t type)
 {
-	struct icmp		*icmp;
-
-	if (type == ICMP_TIME_EXCEEDED || type == ICMP_PARAMETERPROB
-	||  type == ICMP_SOURCE_QUENCH || type == ICMP_REDIRECT
-	||  type == ICMP_TIME_EXCEEDED || type == ICMP_DEST_UNREACH)
-		icmp = packet + 2 * IP_HDR_SIZE + ICMP_HDR_SIZE;
-	else
-		icmp = packet + IP_HDR_SIZE;
+	struct icmp		*icmp = get_original_icmphdr(packet, type);
 
 	return (ntohs(icmp->icmp_seq));
 }
 
 static uint8_t		get_original_ttl(void *packet, uint8_t type)
 {
-	struct icmp		*icmp;
-
-	if (type == ICMP_TIME_EXCEEDED || type == ICMP_PARAMETERPROB
-	||  type == ICMP_SOURCE_QUENCH || type == ICMP_REDIRECT
-	||  type == ICMP_TIME_EXCEEDED || type == ICMP_DEST_UNREACH)
-		icmp = packet + 2 * IP_HDR_SIZE + ICMP_HDR_SIZE;
-	else
-		icmp = packet + IP_HDR_SIZE;
+	struct icmp		*icmp = get_original_icmphdr(packet, type);
 
 	return (ntohs(icmp->icmp_id));
 }
@@ -140,16 +128,6 @@ static uint8_t		get_original_ttl(void *packet, uint8_t type)
 /*
 **------------------------------------------------------------------------------
 */
-
-static suseconds_t	get_rtt(suseconds_t timestamps[TRC_MAX_TTL][TRC_QUERIES], \
-						uint8_t ttl, uint16_t seq)
-{
-	suseconds_t		curr_time = get_time();
-
-	if (ttl < TRC_MAX_TTL && seq < TRC_QUERIES)
-		return (curr_time - timestamps[ttl][seq]);
-	return (0);
-}
 
 /*
 ** analyse_packet
@@ -162,7 +140,7 @@ void				analyse_packet(void *packet, bool verbose_mode, \
 						char buf[TRC_MAX_TTL][BUFFSIZE])
 {
 	static uint8_t	last_ack_ttl = 1;
-	static uint8_t	first_echo_reply_ttl = TRC_MAX_TTL;
+	static uint8_t	first_echo_reply_ttl = TRC_MAX_TTL - 1;
 	suseconds_t		rtt;
 	uint16_t		seq;
 	uint8_t			ttl;
@@ -179,10 +157,6 @@ void				analyse_packet(void *packet, bool verbose_mode, \
 	// remember first echo reply's ttl
 	if (type == ICMP_ECHOREPLY && ttl < first_echo_reply_ttl)
 		first_echo_reply_ttl = ttl;
-
-	// directly print if ttl is invalid
-	if (ttl >= TRC_MAX_TTL)
-		printf("    %-16s (ICMP %2hhu)\n", get_source(packet), type);
 
 	// skip if ttl is greater than found host
 	if (ttl > first_echo_reply_ttl)
