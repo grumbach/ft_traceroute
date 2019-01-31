@@ -6,7 +6,7 @@
 #    By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2018/04/10 17:19:11 by agrumbac          #+#    #+#              #
-#    Updated: 2019/01/28 09:19:52 by agrumbac         ###   ########.fr        #
+#    Updated: 2019/01/31 09:32:05 by agrumbac         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,7 +14,7 @@
 
 NAME = ft_traceroute
 
-SRC = ft_traceroute.c errors.c gen_icmp_msg.c gen_ip_header.c in_cksum.c \
+SRC = ft_traceroute.c errors.c gen_icmp_msg.c gen_ip_header.c utilities.c \
 	print_packet.c socket_io.c packet_analysis.c
 
 CC = clang

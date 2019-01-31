@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/04 18:05:58 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/31 09:14:19 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/31 09:31:42 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,7 +78,6 @@ void			receive_echo_reply(int icmp_sock, struct sockaddr *source, \
 
 void			gen_icmp_msg(void *packet, uint16_t seq, uint8_t ttl);
 void			gen_ip_header(void *packet, uint8_t ttl, uint32_t dest);
-uint16_t		in_cksum(const void *buffer, size_t size);
 
 void			analyse_packet(void *packet, bool verbose_mode, \
 					suseconds_t timestamps[TRC_MAX_TTL][TRC_QUERIES], \
@@ -90,6 +89,7 @@ void			analyse_packet(void *packet, bool verbose_mode, \
 
 suseconds_t		get_time(void);
 char			*net_ntoa(uint32_t in);
+uint16_t		in_cksum(const void *buffer, size_t size);
 
 /*
 ** Verbose mode and error announcing
