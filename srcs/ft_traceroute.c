@@ -6,70 +6,65 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/04 18:04:47 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/28 08:51:52 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/31 05:43:38 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ft_traceroute.h"
 #include <arpa/inet.h> // tmp for inet_addr
 
-static void		recv_loop(int sock, struct sockaddr_in source)
+static void		send_loop(int sock, const struct sockaddr_in *dest)
 {
-	char				packet[PACKET_SIZE];
+	char		packet[SENT_PACKET_SIZE];
+
+	for (uint8_t ttl = 1; ttl < FT_TRACEROUTE_MAX_TTL; ttl++)
+	{
+		for (uint16_t query = 0; query < FT_TRACEROUTE_QUERIES; query++)
+		{
+			gen_ip_header(packet, ttl, dest->sin_addr.s_addr);
+			gen_icmp_msg(packet + IP_HDR_SIZE, query, ttl);
+			send_echo_request(sock, (const struct sockaddr *)dest, packet, false);
+		}
+	}
+}
+
+static void		recv_loop(int sock, struct sockaddr_in source, \
+					char buf[FT_TRACEROUTE_MAX_TTL][BUFFSIZE])
+{
+	char				packet[RECV_PACKET_SIZE];
 	struct timeval		timeout = {.tv_sec = FT_TRACEROUTE_TIMEOUT};
 	fd_set				set;
 	int					ret;
-	uint8_t				ttl;
-	uint8_t				type;
 
-	type = ICMP_TIME_EXCEEDED;
-	ttl = 0;
-	while (type == ICMP_TIME_EXCEEDED && ttl < FT_TRACEROUTE_MAX_TTL)
+	for (size_t i = 0; i < FT_TRACEROUTE_MAX_TTL; i++)
 	{
-		// recv or timeout
 		FD_ZERO(&set);
 		FD_SET(sock, &set);
-		ret = select(sock + 1, &set, NULL, NULL, &timeout);
-		if (ret == -1)
+		if ((ret = select(sock + 1, &set, NULL, NULL, &timeout)) == -1)
 			warn("select refused to comply");
 		if (FD_ISSET(sock, &set))
 		{
 			receive_echo_reply(sock, (struct sockaddr *)&source, packet, false);
-			type = get_type(packet);
-
-			printf("%hhu - from %s\n", get_payload_ttl(packet), get_source(packet));
+			analyse_packet(packet, buf);
 		}
-		else
-			warn("timeout");//TODO tmp
-
-		ttl++;
 	}
 }
 
-static void		send_loop(int sock, const struct sockaddr_in *dest)
+static void		flush_last_lines(char buffer[FT_TRACEROUTE_MAX_TTL][BUFFSIZE])
 {
-	char		packet[PACKET_SIZE];
-	uint16_t	query;
-	uint8_t		ttl;
-
-	ttl = 0;
-	while (ttl < FT_TRACEROUTE_MAX_TTL)
-	{
-		query = 0;
-		while (query < FT_TRACEROUTE_QUERIES)
-		{
-			// send ICMP_ECHO
-			gen_ip_header(packet, ttl, dest->sin_addr.s_addr);
-			gen_icmp_msg(packet + IP_HDR_SIZE, query, ttl);
-			send_echo_request(sock, (const struct sockaddr *)dest, packet, false);
-			query++;
-		}
-		ttl++;
-	}
+	for (size_t i = 0; i < FT_TRACEROUTE_MAX_TTL; i++)
+		printf("%s", buffer[i]);
 }
+
+/*
+** out_of_order_packets is static because
+**  - it can get big, so might as well put it in BSS
+**  - it needs to be filled with zeros, doing it during runtime is ridiculous
+*/
 
 int				main(int ac, char **av)
 {
+	static char			out_of_order_packets[FT_TRACEROUTE_MAX_TTL][BUFFSIZE];
 	struct sockaddr_in	host_addr = {.sin_family = AF_INET};
 	int					sock;
 
@@ -83,7 +78,8 @@ int				main(int ac, char **av)
 	sock = init_socket();
 
 	send_loop(sock, &host_addr);
-	recv_loop(sock, host_addr);
+	recv_loop(sock, host_addr, out_of_order_packets);
+	flush_last_lines(out_of_order_packets);
 
 	return (0);
 }

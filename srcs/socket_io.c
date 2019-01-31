@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/01/18 19:52:51 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/28 02:36:35 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/31 02:48:58 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ void	send_echo_request(int icmp_sock, const struct sockaddr *dest, \
 {
 	ssize_t	ret;
 
-	ret = sendto(icmp_sock, packet, PACKET_SIZE, 0, dest, sizeof(*dest));
+	ret = sendto(icmp_sock, packet, SENT_PACKET_SIZE, 0, dest, sizeof(*dest));
 	if (ret == -1)
 		warn("sendto failed");
 
@@ -49,7 +49,7 @@ void	receive_echo_reply(int icmp_sock, struct sockaddr *source, \
 	ssize_t		ret;
 	socklen_t	addr_size = sizeof(*source);
 
-	ret = recvfrom(icmp_sock, packet, PACKET_SIZE, 0, source, &addr_size);
+	ret = recvfrom(icmp_sock, packet, RECV_PACKET_SIZE, 0, source, &addr_size);
 	if (ret == -1)
 		warn("recvfrom failed");
 

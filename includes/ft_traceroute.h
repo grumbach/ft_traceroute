@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/04 18:05:58 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/28 09:19:46 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/31 06:47:37 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,25 +24,40 @@
 # include <netinet/ip.h>
 # include <netinet/ip_icmp.h>
 
+/*
+** Redefinition of mainstream MACROS
+*/
+
 # define __unused				__attribute__((unused))
 # define __noreturn				__attribute__((noreturn))
 # define __warn_unused_result	__attribute__((warn_unused_result))
 
 # ifdef __APPLE__
-#  define ICMP_TIME_EXCEEDED	ICMP_TIMXCEED
+#  define ICMP_DEST_UNREACH     ICMP_UNREACH
+#  define ICMP_SOURCE_QUENCH    ICMP_SOURCEQUENCH
+#  define ICMP_TIME_EXCEEDED    ICMP_TIMXCEED
+#  define ICMP_PARAMETERPROB    ICMP_PARAMPROB
+#  define ICMP_TIMESTAMP        ICMP_TSTAMP
+#  define ICMP_TIMESTAMPREPLY   ICMP_TSTAMPREPLY
+#  define ICMP_INFO_REQUEST     ICMP_IREQ
+#  define ICMP_INFO_REPLY       ICMP_IREQREPLY
+#  define ICMP_ADDRESS          ICMP_MASKREQ
+#  define ICMP_ADDRESSREPLY     ICMP_MASKREPLY
 # endif
 
 /*
-**
+** Traceroute CONSTANTS
 */
 
 # define IP_HDR_SIZE			20
 # define ICMP_HDR_SIZE			ICMP_MINLEN
-# define ICMP_PAYLOAD_SIZE		56
-# define PACKET_SIZE			(IP_HDR_SIZE + ICMP_HDR_SIZE + ICMP_PAYLOAD_SIZE)
+# define ICMP_PAYLOAD_SIZE		32
+# define SENT_PACKET_SIZE		(IP_HDR_SIZE + ICMP_HDR_SIZE + ICMP_PAYLOAD_SIZE)
+# define RECV_PACKET_SIZE		(IP_HDR_SIZE + ICMP_HDR_SIZE + IP_HDR_SIZE + ICMP_HDR_SIZE+ ICMP_PAYLOAD_SIZE)
 # define ALIGN_TIMESTAMP		4
+# define BUFFSIZE				128
 
-# define FT_TRACEROUTE_TIMEOUT	5
+# define FT_TRACEROUTE_TIMEOUT	10
 # define FT_TRACEROUTE_MAX_TTL	30
 # define FT_TRACEROUTE_QUERIES	1
 
@@ -64,9 +79,7 @@ void			gen_icmp_msg(void *packet, uint16_t seq, uint8_t ttl);
 void			gen_ip_header(void *packet, uint8_t ttl, uint32_t dest);
 uint16_t		in_cksum(const void *buffer, size_t size);
 
-uint8_t			get_type(void *packet);
-const char		*get_source(void *packet);
-uint8_t			get_payload_ttl(void *packet);
+void			analyse_packet(void *packet, char buf[FT_TRACEROUTE_MAX_TTL][BUFFSIZE]);
 
 /*
 ** Verbose mode and error announcing
