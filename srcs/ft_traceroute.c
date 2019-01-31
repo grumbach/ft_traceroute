@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/04 18:04:47 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/31 09:24:25 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/31 10:59:23 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,7 @@ static void		recv_loop(int sock, struct sockaddr_in source, bool verbose_mode, \
 	fd_set				set;
 	int					ret;
 
-	for (size_t i = 0; i < TRC_MAX_TTL; i++)
+	for (size_t i = 0; i < TRC_MAX_TTL * TRC_QUERIES; i++)
 	{
 		FD_ZERO(&set);
 		FD_SET(sock, &set);
@@ -127,5 +127,6 @@ int				main(int ac, char **av)
 	recv_loop(sock, host_addr, !ac, timestamps, out_of_order_packets);
 	flush_last_lines(out_of_order_packets);
 
+	close(sock);
 	return (0);
 }

@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/04 18:05:58 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/31 07:28:44 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/31 11:09:11 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,8 @@ static const char	*packet_format = \
 "\e[32m|    Type %-3hhx   |    Code %-3hhx   |        Checksum %04hx          |\n" \
 "\e[34m+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n" \
 "\e[32m|           Identifier %-5x    |        Sequence Number %-5x  |\n" \
-"\e[34m+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+\e[0m\n";
+"\e[34m+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n" \
+"\e[32m ICMP PAYLOAD\n\e[0m";
 
 #ifdef __linux__
 
@@ -66,15 +67,16 @@ static void			hexdump(void *addr, int len)
 	unsigned char	buff[17];
 	unsigned char	*pc = (unsigned char*)addr;
 
+	printf("\e[34m");
 	for (i = 0; i < len; i++)
 	{
 		if ((i % 16) == 0)
 		{
 			if (i != 0)
-			printf ("  %s\n", buff);
-			printf ("%04x ", i);
+			printf("  %s\n", buff);
+			printf("%04x ", i);
 		}
-		printf (" %02x", pc[i]);
+		printf(" %02x", pc[i]);
 		if ((pc[i] < 0x20) || (pc[i] > 0x7e))
 			buff[i % 16] = '.';
 		else
@@ -83,10 +85,10 @@ static void			hexdump(void *addr, int len)
 	}
 	while ((i % 16) != 0)
 	{
-		printf ("   ");
+		printf("   ");
 		i++;
 	}
-	printf ("  %s\n\n", buff);
+	printf("  %s\n\n\e[0m", buff);
 }
 
 void				dump_reply(void *packet, uint8_t type)

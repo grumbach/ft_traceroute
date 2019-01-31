@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/01/28 02:39:28 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/31 09:31:46 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/31 10:58:22 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -102,6 +102,49 @@ static uint8_t		get_original_ttl(void *packet, uint8_t type)
 **------------------------------------------------------------------------------
 */
 
+void				flush_up_to(char buf[TRC_MAX_TTL][BUFFSIZE], \
+						uint8_t *last_ack_ttl, uint8_t current_window_end)
+{
+	if (current_window_end > TRC_MAX_TTL)
+		current_window_end = TRC_MAX_TTL;
+
+	while (*last_ack_ttl < current_window_end)
+	{
+		if (buf[*last_ack_ttl][0])
+		{
+			printf("%s", buf[*last_ack_ttl]);
+			buf[*last_ack_ttl][0] = '\0';
+		}
+		else
+			printf("%2hhu  \e[31mpackets lost...\e[0m\n", *last_ack_ttl);
+		(*last_ack_ttl)++;
+	}
+}
+
+static void			print_out_stats(void *packet, uint8_t ttl, uint8_t type, \
+						suseconds_t timestamps[TRC_MAX_TTL][TRC_QUERIES], \
+						char buf[TRC_MAX_TTL][BUFFSIZE])
+{
+	static uint8_t	last_ack_ttl = 1;
+	suseconds_t		rtt;
+	uint16_t		seq;
+
+	seq = get_original_seq(packet, type);
+	rtt = get_rtt(timestamps, ttl, seq);
+
+	// if packet arrives in advance store for later else print, older discarded
+	if (ttl > last_ack_ttl)
+		snprintf(buf[ttl], BUFFSIZE, "%2hhu  %-16s \e[32m(ICMP %2hhu)\e[0m %ld.%02ld ms\n", \
+			ttl, get_source(packet), type, rtt / 1000l, rtt % 1000l);
+	else if (ttl == last_ack_ttl)
+		printf("%2hhu  %-16s \e[32m(ICMP %2hhu)\e[0m %ld.%02ld ms\n", last_ack_ttl++, \
+			get_source(packet), type, rtt / 1000l, rtt % 1000l);
+
+	// if ttl is far greater than last_ack_ttl, asume packets where lost
+	if (ttl > last_ack_ttl + TRC_ACK_WINDOW && ttl < TRC_MAX_TTL)
+		flush_up_to(buf, &last_ack_ttl, last_ack_ttl + TRC_ACK_WINDOW / 4);
+}
+
 /*
 ** analyse_packet
 **  - prints arriving packets info
@@ -112,17 +155,12 @@ void				analyse_packet(void *packet, bool verbose_mode, \
 						suseconds_t timestamps[TRC_MAX_TTL][TRC_QUERIES], \
 						char buf[TRC_MAX_TTL][BUFFSIZE])
 {
-	static uint8_t	last_ack_ttl = 1;
 	static uint8_t	first_echo_reply_ttl = TRC_MAX_TTL - 1;
-	suseconds_t		rtt;
-	uint16_t		seq;
 	uint8_t			ttl;
 	uint8_t			type;
 
 	type = get_type(packet);
 	ttl = get_original_ttl(packet, type);
-	seq = get_original_seq(packet, type);
-	rtt = get_rtt(timestamps, ttl, seq);
 
 	if (verbose_mode)
 		dump_reply(packet, type);
@@ -135,11 +173,5 @@ void				analyse_packet(void *packet, bool verbose_mode, \
 	if (ttl > first_echo_reply_ttl)
 		return ;
 
-	// if packet arrives out of order store for later else print
-	if (ttl != last_ack_ttl)
-		snprintf(buf[ttl], BUFFSIZE, "%2hhu  %-16s (ICMP %2hhu) %ld.%02ld ms\n", \
-			ttl, get_source(packet), type, rtt / 1000l, rtt % 1000l);
-	else
-		printf("%2hhu  %-16s (ICMP %2hhu) %ld.%02ld ms\n", last_ack_ttl++, \
-			get_source(packet), type, rtt / 1000l, rtt % 1000l);
+	print_out_stats(packet, ttl, type, timestamps, buf);
 }

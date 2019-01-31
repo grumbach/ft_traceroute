@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/04 18:05:58 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/31 09:31:42 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/31 11:01:11 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,9 +58,10 @@
 # define ALIGN_TIMESTAMP		4
 # define BUFFSIZE				128
 
-# define TRC_TIMEOUT			10
+# define TRC_TIMEOUT			6
 # define TRC_MAX_TTL			30
-# define TRC_QUERIES			1
+# define TRC_QUERIES			3
+# define TRC_ACK_WINDOW			8
 
 /*
 ** Socket i/o
