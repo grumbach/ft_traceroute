@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/11/04 18:05:58 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/31 07:21:55 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/31 08:42:35 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,9 +57,9 @@
 # define ALIGN_TIMESTAMP		4
 # define BUFFSIZE				128
 
-# define FT_TRACEROUTE_TIMEOUT	10
-# define FT_TRACEROUTE_MAX_TTL	30
-# define FT_TRACEROUTE_QUERIES	1
+# define TRC_TIMEOUT			10
+# define TRC_MAX_TTL			30
+# define TRC_QUERIES			1
 
 /*
 ** Socket i/o
@@ -79,8 +79,10 @@ void			gen_icmp_msg(void *packet, uint16_t seq, uint8_t ttl);
 void			gen_ip_header(void *packet, uint8_t ttl, uint32_t dest);
 uint16_t		in_cksum(const void *buffer, size_t size);
 
+suseconds_t		get_time(void);
 void			analyse_packet(void *packet, bool verbose_mode, \
-					char buf[FT_TRACEROUTE_MAX_TTL][BUFFSIZE]);
+					suseconds_t timestamps[TRC_MAX_TTL][TRC_QUERIES], \
+					char buf[TRC_MAX_TTL][BUFFSIZE]);
 
 /*
 ** Verbose mode and error announcing

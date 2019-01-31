@@ -6,7 +6,7 @@
 /*   By: agrumbac <agrumbac@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/01/28 02:39:28 by agrumbac          #+#    #+#             */
-/*   Updated: 2019/01/31 08:01:36 by agrumbac         ###   ########.fr       */
+/*   Updated: 2019/01/31 08:48:23 by agrumbac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ static char			*net_ntoa(uint32_t in)
 	return (buffer);
 }
 
-static suseconds_t	get_time(void)
+suseconds_t			get_time(void)
 {
 	struct timeval	curr_time;
 
@@ -59,7 +59,21 @@ static const char	*get_source(void *packet)
 	return (net_ntoa(ip->saddr));
 }
 
-static uint8_t		get_payload_ttl(void *packet, uint8_t type)
+static uint16_t		get_original_seq(void *packet, uint8_t type)
+{
+	struct icmphdr	*icmp;
+
+	if (type == ICMP_TIME_EXCEEDED || type == ICMP_PARAMETERPROB
+	||  type == ICMP_SOURCE_QUENCH || type == ICMP_REDIRECT
+	||  type == ICMP_TIME_EXCEEDED || type == ICMP_DEST_UNREACH)
+		icmp = packet + 2 * IP_HDR_SIZE + ICMP_HDR_SIZE;
+	else
+		icmp = packet + IP_HDR_SIZE;
+
+	return (ntohs(icmp->un.echo.sequence));
+}
+
+static uint8_t		get_original_ttl(void *packet, uint8_t type)
 {
 	struct icmphdr	*icmp;
 
@@ -93,7 +107,21 @@ static const char	*get_source(void *packet)
 	return (net_ntoa(ip->ip_src.s_addr));
 }
 
-static uint8_t		get_payload_ttl(void *packet, uint8_t type)
+static uint16_t		get_original_seq(void *packet, uint8_t type)
+{
+	struct icmp		*icmp;
+
+	if (type == ICMP_TIME_EXCEEDED || type == ICMP_PARAMETERPROB
+	||  type == ICMP_SOURCE_QUENCH || type == ICMP_REDIRECT
+	||  type == ICMP_TIME_EXCEEDED || type == ICMP_DEST_UNREACH)
+		icmp = packet + 2 * IP_HDR_SIZE + ICMP_HDR_SIZE;
+	else
+		icmp = packet + IP_HDR_SIZE;
+
+	return (ntohs(icmp->icmp_seq));
+}
+
+static uint8_t		get_original_ttl(void *packet, uint8_t type)
 {
 	struct icmp		*icmp;
 
@@ -113,24 +141,14 @@ static uint8_t		get_payload_ttl(void *packet, uint8_t type)
 **------------------------------------------------------------------------------
 */
 
-static suseconds_t	get_payload_rtt(void *packet, uint8_t type)
+static suseconds_t	get_rtt(suseconds_t timestamps[TRC_MAX_TTL][TRC_QUERIES], \
+						uint8_t ttl, uint16_t seq)
 {
-	struct timeval	*send_time;
-	struct timeval	aligned_buffer;
 	suseconds_t		curr_time = get_time();
 
-	if (type == ICMP_TIME_EXCEEDED || type == ICMP_PARAMETERPROB
-	||  type == ICMP_SOURCE_QUENCH || type == ICMP_REDIRECT
-	||  type == ICMP_TIME_EXCEEDED || type == ICMP_DEST_UNREACH)
-	{
-		send_time = packet + 2 * IP_HDR_SIZE + 2 * ICMP_HDR_SIZE + ALIGN_TIMESTAMP;
-		memcpy(&aligned_buffer, send_time, sizeof(struct timeval));
-		send_time = &aligned_buffer;
-	}
-	else
-		send_time = packet + IP_HDR_SIZE + ICMP_HDR_SIZE + ALIGN_TIMESTAMP;
-
-	return (curr_time - send_time->tv_sec * 1000000 - send_time->tv_usec);
+	if (ttl < TRC_MAX_TTL && seq < TRC_QUERIES)
+		return (curr_time - timestamps[ttl][seq]);
+	return (0);
 }
 
 /*
@@ -140,17 +158,20 @@ static suseconds_t	get_payload_rtt(void *packet, uint8_t type)
 */
 
 void				analyse_packet(void *packet, bool verbose_mode, \
-						char buf[FT_TRACEROUTE_MAX_TTL][BUFFSIZE])
+						suseconds_t timestamps[TRC_MAX_TTL][TRC_QUERIES], \
+						char buf[TRC_MAX_TTL][BUFFSIZE])
 {
 	static uint8_t	last_ack_ttl = 1;
-	static uint8_t	first_echo_reply_ttl = FT_TRACEROUTE_MAX_TTL;
+	static uint8_t	first_echo_reply_ttl = TRC_MAX_TTL;
 	suseconds_t		rtt;
+	uint16_t		seq;
 	uint8_t			ttl;
 	uint8_t			type;
 
 	type = get_type(packet);
-	ttl = get_payload_ttl(packet, type);
-	rtt = get_payload_rtt(packet, type);
+	ttl = get_original_ttl(packet, type);
+	seq = get_original_seq(packet, type);
+	rtt = get_rtt(timestamps, ttl, seq);
 
 	if (verbose_mode)
 		dump_reply(packet, type);
@@ -160,7 +181,7 @@ void				analyse_packet(void *packet, bool verbose_mode, \
 		first_echo_reply_ttl = ttl;
 
 	// directly print if ttl is invalid
-	if (ttl >= FT_TRACEROUTE_MAX_TTL)
+	if (ttl >= TRC_MAX_TTL)
 		printf("    %-16s (ICMP %2hhu)\n", get_source(packet), type);
 
 	// skip if ttl is greater than found host
